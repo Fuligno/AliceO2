@@ -2588,8 +2588,8 @@ void Detector::processFastSim(const std::vector<TParticle>& primaries)
     // the model is trained for particles going to positive z: mirror in z those going to the C side
     const float zsign = p.Pz() < 0. ? -1.f : 1.f;
     mFastSimIndices.push_back(ip);
-    mFastSimInput.insert(mFastSimInput.end(), {float(p.GetPdgCode()), float(p.Energy()), float(p.Px()), float(p.Py()), zsign * float(p.Pz()),
-                                                float(p.Vx()), float(p.Vy()), zsign * float(p.Vz())});
+    mFastSimInput.insert(mFastSimInput.end(), {float(p.GetPdgCode()), float(p.Energy()), float(p.Vx()), float(p.Vy()), zsign * float(p.Vz()),
+                                                float(p.Px()), float(p.Py()), zsign * float(p.Pz())}); // order expected by the model
   }
   const int nPart = mFastSimIndices.size();
   if (!nPart) {
@@ -2614,7 +2614,7 @@ void Detector::processFastSim(const std::vector<TParticle>& primaries)
           LOG(error) << "ZDC fast simulation: non finite output for primary " << trackID << ", ignored";
           continue;
         }
-        const int nphe = std::lround(out);
+        const int nphe = std::lround(out); // the model already provides integer valued, non negative numbers
         if (nphe <= 0) {
           continue;
         }

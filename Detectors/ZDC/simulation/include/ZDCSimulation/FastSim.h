@@ -49,6 +49,7 @@ class FastSim
   std::unique_ptr<Impl> mImpl;
   FastSimModel mModel;
   std::vector<float> mNoise;
+  std::vector<float> mUniform;
 };
 
 } // namespace zdc

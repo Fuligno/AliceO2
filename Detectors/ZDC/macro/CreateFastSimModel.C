@@ -23,8 +23,9 @@
 /// Creates the CCDB object for the ZDC fast simulation: the ONNX model together with the parameters defining its usage.
 ///
 /// The model is expected to have
-///  - an input  "conditions" [N,8]  : PDG, E, px, py, pz, vx, vy, vz (raw values, particle going to positive z)
-///  - an input  "noise"      [N,10] : gaussian noise
+///  - an input  "cond_phys" [N,8]  : PDG, E, vx, vy, vz, px, py, pz (raw values, particle going to positive z)
+///  - an input  "x0"        [N,10] : gaussian noise
+///  - an input  "u"         [N,10] : uniform numbers for the stochastic rounding (pass "" if the model has no such input)
 ///  - an output              [N,10] : number of photons in ZN (common, 1, 2, 3, 4) and ZP (common, 1, 2, 3, 4)
 ///
 /// ccdbHost: "" or "external", "internal", "test", an explicit URL, or "local" to only write the ROOT file
@@ -35,7 +36,7 @@ void CreateFastSimModel(std::string onnxFile = "zdc_fastsim.onnx",
                         long tmin = 0, long tmax = -1, std::string ccdbHost = "local",
                         std::string version = "",
                         float eMin = 0., float eMax = 1.e9, float absEtaMin = 0., float vtxRMax = 1.e9, float vtxZMax = 1.e9,
-                        std::string inputNameConditions = "conditions", std::string inputNameNoise = "noise", std::string outputName = "",
+                        std::string inputNameConditions = "cond_phys", std::string inputNameNoise = "x0", std::string inputNameUniform = "u", std::string outputName = "x_phys",
                         std::string localFile = "ZDCFastSimModel.root")
 {
   o2::zdc::FastSimModel model;
@@ -51,6 +52,7 @@ void CreateFastSimModel(std::string onnxFile = "zdc_fastsim.onnx",
   model.vtxZMax = vtxZMax;
   model.inputNameConditions = inputNameConditions;
   model.inputNameNoise = inputNameNoise;
+  model.inputNameUniform = inputNameUniform;
   model.outputName = outputName;
   model.print();
 

@@ -30,21 +30,24 @@ namespace zdc
 /// directly to the number of photons seen by the 5 ZN and the 5 ZP channels.
 ///
 /// ONNX signature expected by the code:
-///  - input  "conditions" [N, NConditions] : PDG, E, px, py, pz, vx, vy, vz (GeV, GeV/c, cm; raw, unscaled)
-///  - input  "noise"      [N, NOutputs]    : normal distributed random numbers
+///  - input  "cond_phys" [N, NConditions] : PDG, E, vx, vy, vz, px, py, pz (GeV, cm, GeV/c; raw, unscaled)
+///  - input  "x0"        [N, NOutputs]    : normal distributed random numbers
+///  - input  "u"         [N, NOutputs]    : uniform random numbers in [0,1) used by the model for the stochastic
+///                                          rounding of the output (optional: only if inputNameUniform is not empty)
 ///  - output              [N, NOutputs]    : photons in ZN (common, 1, 2, 3, 4) followed by ZP (common, 1, 2, 3, 4)
 /// The model is side agnostic and trained for particles going towards positive z:
 /// particles with pz < 0 are mirrored in z before the inference and the result is assigned to the C side.
 struct FastSimModel {
-  static constexpr int NConditions = 8;                 ///< PDG, E, px, py, pz, vx, vy, vz
+  static constexpr int NConditions = 8;                 ///< PDG, E, vx, vy, vz, px, py, pz
   static constexpr int NChannelsPerCalo = 5;            ///< common + 4 towers
   static constexpr int NOutputs = 2 * NChannelsPerCalo; ///< ZN followed by ZP
 
-  std::vector<char> onnx;                         ///< serialized ONNX model
-  std::string inputNameConditions = "conditions"; ///< name of the input tensor with the particle kinematics
-  std::string inputNameNoise = "noise";           ///< name of the input tensor with the gaussian noise
-  std::string outputName = "";                    ///< name of the output tensor (empty: first output of the model)
-  std::string version = "";                       ///< free text identifying the model
+  std::vector<char> onnx;                        ///< serialized ONNX model
+  std::string inputNameConditions = "cond_phys"; ///< name of the input tensor with the particle kinematics
+  std::string inputNameNoise = "x0";             ///< name of the input tensor with the gaussian noise
+  std::string inputNameUniform = "u";            ///< name of the input tensor with uniform random numbers (empty: not used by the model)
+  std::string outputName = "x_phys";             ///< name of the output tensor (empty: first output of the model)
+  std::string version = "";                      ///< free text identifying the model
 
   // domain of validity of the model: everything outside is ignored by the fast simulation
   std::vector<int> pdgCodes = {2212, 2112}; ///< supported particle species
