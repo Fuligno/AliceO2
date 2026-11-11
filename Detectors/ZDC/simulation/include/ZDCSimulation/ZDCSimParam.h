@@ -27,7 +27,7 @@ struct ZDCSimParam : public o2::conf::ConfigurableParamHelper<ZDCSimParam> {
   int nBCAheadCont = 1;                        ///< number of BC to read ahead of trigger in continuous mode
   int nBCAheadTrig = 3;                        ///< number of BC to read ahead of trigger in triggered mode
   bool recordSpatialResponse = false;          ///< whether to record 2D spatial response showering images in proton/neutron detector
-  bool useZDCFastSim = false;                              ///< replace ZDC geometry and transport by the fast simulation model (spectator p and n only)
+  bool useZDCFastSim = false;                  ///< replace ZDC geometry and transport by the fast simulation model (spectator p and n only)
   std::string fastSimCCDBPath = "ZDC/Config/FastSimModel"; ///< CCDB path of the fast simulation model (o2::zdc::FastSimModel)
   std::string fastSimLocalFile = "";                       ///< if not empty: local ROOT file with the model, used instead of the CCDB
 

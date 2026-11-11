@@ -2465,7 +2465,6 @@ void Detector::FinishPrimary()
   // after each primary we should definitely reset
   mLastPrincipalTrackEntered = -1;
   flushSpatialResponse();
-
 }
 
 void Detector::BeginPrimary()
@@ -2480,7 +2479,6 @@ void Detector::BeginPrimary()
   resetHitIndices();
 
   mCurrentPrincipalParticle = *stack->GetCurrentTrack();
-
 }
 
 //_____________________________________________________________________________
@@ -2539,7 +2537,7 @@ void Detector::processFastSim(const std::vector<TParticle>& primaries)
     const float zsign = p.Pz() < 0. ? -1.f : 1.f;
     mFastSimIndices.push_back(ip);
     mFastSimInput.insert(mFastSimInput.end(), {float(p.GetPdgCode()), float(p.Energy()), float(p.Vx()), float(p.Vy()), zsign * float(p.Vz()),
-                                                float(p.Px()), float(p.Py()), zsign * float(p.Pz())}); // order expected by the model
+                                               float(p.Px()), float(p.Py()), zsign * float(p.Pz())}); // order expected by the model
   }
   const int nPart = mFastSimIndices.size();
   if (!nPart) {
@@ -2552,7 +2550,7 @@ void Detector::processFastSim(const std::vector<TParticle>& primaries)
     const int trackID = mFastSimIndices[i];
     const auto& p = primaries[trackID];
     const bool sideA = p.Pz() > 0.;
-    resetHitIndices(); // separate hits for every primary
+    resetHitIndices();                        // separate hits for every primary
     for (int icalo = 0; icalo < 2; icalo++) { // model output: ZN channels followed by ZP ones
       const int detector = icalo == 0 ? (sideA ? ZNA : ZNC) : (sideA ? ZPA : ZPC);
       const double zDet = icalo == 0 ? (sideA ? Geometry::ZNAPOSITION[2] : Geometry::ZNCPOSITION[2]) : (sideA ? Geometry::ZPAPOSITION[2] : Geometry::ZPCPOSITION[2]);
