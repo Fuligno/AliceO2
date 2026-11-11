@@ -11,6 +11,7 @@
 
 #include "ZDCSimulation/FastSim.h"
 #include "Framework/Logger.h"
+#include "DetectorsBase/SimRandom.h"
 #include <TRandom.h>
 #include <array>
 #include <string>
@@ -130,9 +131,10 @@ void FastSim::run(const std::vector<float>& conditions, int nParticles, std::vec
   if (conditions.size() != size_t(nParticles) * FastSimModel::NConditions) {
     LOG(fatal) << "ZDC fast simulation: inconsistent size of input " << conditions.size() << " for " << nParticles << " particles";
   }
+  auto* rnd = o2::base::simRandom(); // the generator of the transport of this thread
   mNoise.resize(size_t(nParticles) * FastSimModel::NOutputs);
   for (auto& v : mNoise) {
-    v = gRandom->Gaus(0., 1.);
+    v = rnd->Gaus(0., 1.);
   }
   const std::array<int64_t, 2> shapeCond{nParticles, FastSimModel::NConditions}, shapeNoise{nParticles, FastSimModel::NOutputs};
   std::vector<Ort::Value> inputs;
@@ -142,7 +144,7 @@ void FastSim::run(const std::vector<float>& conditions, int nParticles, std::vec
     // uniform numbers for the stochastic rounding done inside the model
     mUniform.resize(mNoise.size());
     for (auto& v : mUniform) {
-      v = gRandom->Rndm();
+      v = rnd->Rndm();
     }
     inputs.emplace_back(Ort::Value::CreateTensor<float>(mImpl->memInfo, mUniform.data(), mUniform.size(), shapeNoise.data(), shapeNoise.size()));
   }
