@@ -68,7 +68,7 @@ void FastSimModel::print() const
     pdgs += std::to_string(c) + " ";
   }
   LOG(info) << "ZDC FastSimModel version '" << version << "', ONNX size " << onnx.size() << " bytes";
-  LOG(info) << "  inputs: '" << inputNameConditions << "' [N," << NConditions << "], '" << inputNameNoise << "' [N," << NOutputs
+  LOG(info) << "  inputs: '" << inputNameConditions << "' [N," << NConditions << "], '" << inputNameNoise << "' [N," << NOutputs << "], '" << inputNameUniform << "' [N," << NOutputs
             << "]; output: '" << outputName << "' [N," << NOutputs << "]";
   LOG(info) << "  PDG: " << pdgs << "| E in [" << eMin << ", " << eMax << "] GeV | |eta| > " << absEtaMin
             << " | vtx R < " << vtxRMax << " cm, |z| < " << vtxZMax << " cm";

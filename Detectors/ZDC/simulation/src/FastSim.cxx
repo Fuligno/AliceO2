@@ -13,6 +13,8 @@
 #include "Framework/Logger.h"
 #include <TRandom.h>
 #include <array>
+#include <string>
+#include <vector>
 #include <cstring>
 
 #if __has_include(<onnxruntime/core/session/onnxruntime_cxx_api.h>)
@@ -28,7 +30,7 @@ struct FastSim::Impl {
   Ort::SessionOptions options;
   std::unique_ptr<Ort::Session> session;
   Ort::MemoryInfo memInfo = Ort::MemoryInfo::CreateCpu(OrtArenaAllocator, OrtMemTypeDefault);
-  std::array<std::string, 2> inputNames; // conditions, noise
+  std::vector<std::string> inputNames; // conditions, noise, (uniform)
   std::string outputName;
 };
 
@@ -71,7 +73,7 @@ void FastSim::init(const FastSimModel& model)
   Ort::AllocatorWithDefaultOptions allocator;
 
   // inputs
-  bool foundCond = false, foundNoise = false;
+  bool foundCond = false, foundNoise = false, foundUniform = false;
   for (size_t i = 0; i < session.GetInputCount(); i++) {
     const std::string name = session.GetInputNameAllocated(i, allocator).get();
     if (name == mModel.inputNameConditions) {
@@ -80,6 +82,9 @@ void FastSim::init(const FastSimModel& model)
     } else if (name == mModel.inputNameNoise) {
       checkShape(session.GetInputTypeInfo(i), FastSimModel::NOutputs, name);
       foundNoise = true;
+    } else if (!mModel.inputNameUniform.empty() && name == mModel.inputNameUniform) {
+      checkShape(session.GetInputTypeInfo(i), FastSimModel::NOutputs, name);
+      foundUniform = true;
     } else {
       LOG(fatal) << "ZDC fast simulation: unexpected model input '" << name << "'";
     }
@@ -88,6 +93,12 @@ void FastSim::init(const FastSimModel& model)
     LOG(fatal) << "ZDC fast simulation: model inputs '" << mModel.inputNameConditions << "' and/or '" << mModel.inputNameNoise << "' not found";
   }
   mImpl->inputNames = {mModel.inputNameConditions, mModel.inputNameNoise};
+  if (!mModel.inputNameUniform.empty()) {
+    if (!foundUniform) {
+      LOG(fatal) << "ZDC fast simulation: model input '" << mModel.inputNameUniform << "' not found";
+    }
+    mImpl->inputNames.push_back(mModel.inputNameUniform);
+  }
 
   // output
   int outID = -1;
@@ -124,10 +135,21 @@ void FastSim::run(const std::vector<float>& conditions, int nParticles, std::vec
     v = gRandom->Gaus(0., 1.);
   }
   const std::array<int64_t, 2> shapeCond{nParticles, FastSimModel::NConditions}, shapeNoise{nParticles, FastSimModel::NOutputs};
-  std::array<Ort::Value, 2> inputs{
-    Ort::Value::CreateTensor<float>(mImpl->memInfo, const_cast<float*>(conditions.data()), conditions.size(), shapeCond.data(), shapeCond.size()),
-    Ort::Value::CreateTensor<float>(mImpl->memInfo, mNoise.data(), mNoise.size(), shapeNoise.data(), shapeNoise.size())};
-  const std::array<const char*, 2> inNames{mImpl->inputNames[0].c_str(), mImpl->inputNames[1].c_str()};
+  std::vector<Ort::Value> inputs;
+  inputs.emplace_back(Ort::Value::CreateTensor<float>(mImpl->memInfo, const_cast<float*>(conditions.data()), conditions.size(), shapeCond.data(), shapeCond.size()));
+  inputs.emplace_back(Ort::Value::CreateTensor<float>(mImpl->memInfo, mNoise.data(), mNoise.size(), shapeNoise.data(), shapeNoise.size()));
+  if (mImpl->inputNames.size() > 2) {
+    // uniform numbers for the stochastic rounding done inside the model
+    mUniform.resize(mNoise.size());
+    for (auto& v : mUniform) {
+      v = gRandom->Rndm();
+    }
+    inputs.emplace_back(Ort::Value::CreateTensor<float>(mImpl->memInfo, mUniform.data(), mUniform.size(), shapeNoise.data(), shapeNoise.size()));
+  }
+  std::vector<const char*> inNames;
+  for (const auto& n : mImpl->inputNames) {
+    inNames.push_back(n.c_str());
+  }
   const std::array<const char*, 1> outNames{mImpl->outputName.c_str()};
   try {
     auto out = mImpl->session->Run(Ort::RunOptions{nullptr}, inNames.data(), inputs.data(), inputs.size(), outNames.data(), outNames.size());
